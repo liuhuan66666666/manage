@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.liuhuan.manage.mapper.IntegralMapper">
+
+    <resultMap id="BaseResultMap" type="com.liuhuan.manage.model.entity.Integral">
+            <id property="id" column="id" jdbcType="INTEGER"/>
+            <result property="memberId" column="memberId" jdbcType="BIGINT"/>
+            <result property="score" column="score" jdbcType="INTEGER"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id,memberId,score
+    </sql>
+    <select id="getListVO" resultType="com.liuhuan.manage.model.vo.IntegralVO">
+        SELECT i.id, i.score, m.name
+        FROM `integral` i
+        INNER JOIN member m ON i.memberId = m.id
+        ORDER BY i.score  DESC
+        LIMIT #{offset}, #{size}
+    </select>
+</mapper>

@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.liuhuan.manage.mapper.DepartmentMapper">
+
+    <resultMap id="BaseResultMap" type="com.liuhuan.manage.model.entity.Department">
+            <id property="id" column="id" jdbcType="INTEGER"/>
+            <result property="name" column="name" jdbcType="VARCHAR"/>
+            <result property="responsibilities" column="responsibilities" jdbcType="VARCHAR"/>
+            <result property="manager" column="manager" jdbcType="VARCHAR"/>
+            <result property="manager_phone" column="manager_phone" jdbcType="VARCHAR"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id,name,responsibilities,
+        manager,manager_phone
+    </sql>
+</mapper>

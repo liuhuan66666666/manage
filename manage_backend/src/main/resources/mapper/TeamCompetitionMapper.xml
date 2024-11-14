@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.liuhuan.manage.mapper.TeamCompetitionMapper">
+
+    <resultMap id="BaseResultMap" type="com.liuhuan.manage.model.entity.TeamCompetition">
+            <id property="id" column="id" jdbcType="BIGINT"/>
+            <result property="name" column="name" jdbcType="VARCHAR"/>
+            <result property="year" column="year" jdbcType="INTEGER"/>
+            <result property="type" column="type" jdbcType="VARCHAR"/>
+            <result property="status" column="status" jdbcType="TINYINT"/>
+            <result property="registrationDeadline" column="registration_deadline" jdbcType="TIMESTAMP"/>
+            <result property="project_id" column="project_id" jdbcType="BIGINT"/>
+    </resultMap>
+
+
+
+    <resultMap id="TeamCompetitionResultMap" type="com.liuhuan.manage.model.vo.TeamCompetitionVO">
+        <!-- 映射竞赛表的字段 -->
+        <id property="id" column="id"/>
+        <result property="name" column="competition_name"/>
+        <result property="year" column="year"/>
+        <result property="status" column="status"/>
+        <result property="type" column="competition_type"/>
+        <result property="registrationDeadline" column="registration_deadline"/>
+        <result property="project" column="project_name"/>
+
+        <!-- 映射教师列表字段 -->
+        <result property="teacher" column="teacher_names" javaType="java.util.List"
+                typeHandler="com.liuhuan.manage.handler.TeacherTypeHandler"/>
+    </resultMap>
+
+
+    <sql id="Base_Column_List">
+        id,name,year,
+        type,status,registration_deadline,
+        project_id
+    </sql>
+    <select id="getProjectId" resultType="java.lang.Long">
+        select id
+        from project
+        where name=#{projectName}
+    </select>
+
+
+    <!--总数查询-->
+    <select id="countTeamCompetitions" resultType="int">
+        SELECT COUNT(DISTINCT t.id) AS total_count
+        FROM
+        team_competition t
+        LEFT JOIN
+        project p ON t.project_id = p.id
+        LEFT JOIN
+        competition_teacher ct ON t.id = ct.competition_id
+        LEFT JOIN
+        teacher te ON ct.teacher_id = te.id
+        <where>
+            <if test="name != null and name != ''">
+                AND t.name LIKE CONCAT('%', #{name}, '%')
+            </if>
+            <if test="year != null">
+                AND t.year = #{year}
+            </if>
+            <if test="status != null">
+                AND t.status = #{status}
+            </if>
+        </where>
+    </select>
+
+    <!--分页查询-->
+    <select id="listTeamCompetitionVOS" resultMap="TeamCompetitionResultMap">
+        SELECT
+            t.id,
+            t.name AS competition_name,
+            t.year,
+            t.type AS competition_type,
+            t.status,
+            t.registration_deadline,
+            p.name AS project_name,
+            GROUP_CONCAT(te.name SEPARATOR ', ') AS teacher_names
+        FROM
+            team_competition t
+                LEFT JOIN
+            project p ON t.project_id = p.id
+                LEFT JOIN
+            competition_teacher ct ON t.id = ct.competition_id
+                LEFT JOIN
+            teacher te ON ct.teacher_id = te.id
+        <where>
+            <if test="name">
+                AND t.name LIKE CONCAT('%', #{name}, '%')
+            </if>
+            <if test="year != null">
+                AND t.year = #{year}
+            </if>
+            <if test="status!= null">
+                AND t.status= #{status}
+            </if>
+        </where>
+        GROUP BY
+            t.id
+        ORDER BY
+            t.year DESC, t.name ASC
+        LIMIT #{offset}, #{size};
+
+    </select>
+</mapper>

@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.liuhuan.manage.mapper.ProjectMapper">
+
+    <resultMap id="BaseResultMap" type="com.liuhuan.manage.model.entity.Project">
+            <id property="id" column="project_id" jdbcType="BIGINT"/>
+            <result property="name" column="project_name" jdbcType="VARCHAR"/>
+            <result property="source_code_path" column="source_code_path" jdbcType="VARCHAR"/>
+            <result property="status" column="project_status" jdbcType="TINYINT"/>
+            <result property="startDate" column="project_start_date" jdbcType="TIMESTAMP"/>
+            <result property="leader_id" column="leader_id" jdbcType="BIGINT"/>
+    </resultMap>
+
+    <!-- 查询项目信息及其对应的学生和教师 -->
+    <resultMap id="competitionResultMap" type="com.liuhuan.manage.model.vo.ProjectVO">
+        <!-- 映射竞赛表的字段 -->
+        <id property="id" column="id"/>
+        <result property="name" column="name"/>
+        <result property="source_code_path" column="source_code_path"/>
+        <result property="status" column="status"/>
+        <result property="startDate" column="start_date"/>
+        <result property="leader" column="leader_name"/>
+
+        <!-- 映射学生列表字段 -->
+        <result property="student" column="student_names" javaType="java.util.List"
+                typeHandler="com.liuhuan.manage.handler.TeacherTypeHandler"/>
+
+
+        <!-- 映射教师列表字段 -->
+        <result property="teacher" column="teacher_names" javaType="java.util.List"
+                typeHandler="com.liuhuan.manage.handler.TeacherTypeHandler"/>
+    </resultMap>
+
+
+    <sql id="Base_Column_List">
+        id,name,source_code_path,
+        status,start_date,leader_id
+    </sql>
+    <insert id="saveProjectStudentRelation">
+        insert into project_student (project_id,student_id) values (#{ProjectId},#{studentId})
+    </insert>
+
+    <insert id="saveProjectTeacherRelation">
+        insert into project_teacher (project_id,teacher_id) values (#{ProjectId},#{teacherId})
+    </insert>
+
+    <update id="editProjectStudentRelation">
+         update project_student
+         set student_id=#{studentId}
+         where project_id=#{project_id}
+    </update>
+
+    <update id="editProjectTeacherRelation">
+          update project_teacher
+          set teacher_id=#{teacherId}
+          where project_id=#{project_id}
+    </update>
+
+    <delete id="deleteProjectStudentRelation">
+         delete from project_student where project_id=#{project_id}
+    </delete>
+
+    <delete id="deleteProjectTeacherRelation">
+        delete from project_teacher where project_id=#{project_id}
+    </delete>
+
+
+
+    <!-- 总数查询 -->
+    <select id="getProjectVOCount" resultType="int">
+        SELECT COUNT(DISTINCT p.id)
+        FROM project p
+        LEFT JOIN student s_leader ON p.leader_id = s_leader.id
+        LEFT JOIN project_student ps ON p.id = ps.project_id
+        LEFT JOIN student s_member ON ps.student_id = s_member.id
+        LEFT JOIN project_teacher pt ON p.id = pt.project_id
+        LEFT JOIN teacher t ON pt.teacher_id = t.id
+        <where>
+            <if test="name">
+                AND p.name LIKE CONCAT('%', #{name}, '%')
+            </if>
+            <if test="leader != null">
+                AND p.leader_id = #{leader}
+            </if>
+        </where>
+    </select>
+
+
+    <!-- 分页查询-->
+    <select id="getListProjectVO" resultMap="competitionResultMap">
+        SELECT
+        p.id,
+        p.name,
+        p.source_code_path,
+        p.status,
+        p.start_date,
+        s_leader.name AS leader_name,
+        GROUP_CONCAT(DISTINCT s_member.name ORDER BY s_member.name) AS student_names,
+        GROUP_CONCAT(DISTINCT t.name ORDER BY t.name) AS teacher_names
+        FROM project p
+        LEFT JOIN student s_leader ON p.leader_id = s_leader.id
+        LEFT JOIN project_student ps ON p.id = ps.project_id
+        LEFT JOIN student s_member ON ps.student_id = s_member.id
+        LEFT JOIN project_teacher pt ON p.id = pt.project_id
+        LEFT JOIN teacher t ON pt.teacher_id = t.id
+        <where>
+            <if test="name">
+                AND p.name LIKE CONCAT('%', #{name}, '%')
+            </if>
+            <if test="leader != null">
+                AND p.leader_id = #{leader}
+            </if>
+        </where>
+        GROUP BY p.id, s_leader.name
+        LIMIT #{offset}, #{size};
+    </select>
+
+</mapper>

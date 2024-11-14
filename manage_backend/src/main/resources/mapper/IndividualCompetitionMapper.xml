@@ -1,0 +1,137 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+
+
+
+<mapper namespace="com.liuhuan.manage.mapper.IndividualCompetitionMapper">
+
+
+
+    <resultMap id="BaseResultMap" type="com.liuhuan.manage.model.entity.IndividualCompetition">
+            <id property="id" column="id" jdbcType="BIGINT"/>
+            <result property="name" column="name" jdbcType="VARCHAR"/>
+            <result property="year" column="year" jdbcType="INTEGER"/>
+            <result property="type" column="type" jdbcType="VARCHAR"/>
+            <result property="status" column="status" jdbcType="TINYINT"/>
+            <result property="registrationDeadline" column="registration_deadline" jdbcType="TIMESTAMP"/>
+            <result property="endDeadline" column="end_deadline" jdbcType="TIMESTAMP"/>
+    </resultMap>
+
+
+
+    <!-- 查询竞赛信息及其对应的学生和教师 -->
+    <resultMap id="competitionResultMap" type="com.liuhuan.manage.model.vo.IndividualCompetitionVO">
+        <!-- 映射竞赛表的字段 -->
+        <id property="id" column="id"/>
+        <result property="name" column="name"/>
+        <result property="year" column="year"/>
+        <result property="type" column="type"/>
+        <result property="status" column="status"/>
+        <result property="registrationDeadline" column="registration_deadline"/>
+        <result property="endDeadline" column="end_deadline"/>
+        <result property="student" column="student"/>
+
+        <!-- 映射教师列表字段 -->
+        <result property="teacher" column="teacher_names" javaType="java.util.List"
+                typeHandler="com.liuhuan.manage.handler.TeacherTypeHandler"/>
+    </resultMap>
+
+
+    <sql id="Base_Column_List">
+        id,name,year,
+        type,status,registration_deadline,
+        student_id,end_deadline
+    </sql>
+    <insert id="saveCompetitionStudentRelation">
+        INSERT INTO competition_student (competition_id, student_id) VALUES (#{id}, #{studentId})
+    </insert>
+    <insert id="saveCompetitionTeacherRelation">
+        INSERT INTO competition_teacher (competition_id, teacher_id) VALUES (#{id}, #{teacherId})
+    </insert>
+
+
+    <update id="updateCompetitionStudentRelation">
+        update competition_student
+        set student_id=#{studentId}
+        where competition_id=#{id}
+    </update>
+
+
+    <update id="updateCompetitionTeacherRelation">
+        update competition_teacher
+        set teacher_id=#{teacherId}
+        where competition_id=#{id}
+    </update>
+
+
+    <delete id="deleteCompetitionTeacherRelation">
+        DELETE FROM competition_teacher WHERE competition_id=#{id}
+    </delete>
+    <delete id="deleteCompetitionStudentRelation">
+        DELETE FROM competition_student WHERE competition_id=#{id}
+    </delete>
+
+
+
+    <!-- 总数查询 -->
+    <select id="countCompetitionVO" resultType="int">
+        SELECT COUNT(DISTINCT ic.id)
+        FROM individual_competition ic
+        LEFT JOIN competition_student cs ON ic.id = cs.competition_id
+        LEFT JOIN student s ON cs.student_id = s.id
+        LEFT JOIN competition_teacher ct ON ic.id = ct.competition_id
+        LEFT JOIN teacher t ON ct.teacher_id = t.id
+        <where>
+            <!-- 动态查询条件 -->
+            <if test="name != null and name != ''">
+                AND ic.name LIKE CONCAT('%', #{name}, '%')
+            </if>
+            <if test="year != null">
+                AND ic.year = #{year}
+            </if>
+            <if test="status != null">
+                AND ic.status = #{status}
+            </if>
+        </where>
+    </select>
+
+
+    <!-- 分页查询 -->
+    <select id="getListCompetitionVO" resultMap="competitionResultMap">
+        SELECT
+        ic.id,
+        ic.name,
+        ic.year,
+        ic.type,
+        ic.status,
+        ic.registration_deadline,
+        ic.end_deadline,
+        s.name AS student,
+        GROUP_CONCAT(t.name SEPARATOR ',') AS teacher_names
+        FROM
+        individual_competition ic
+        LEFT JOIN competition_student cs ON ic.id = cs.competition_id
+        LEFT JOIN student s ON cs.student_id = s.id
+        LEFT JOIN competition_teacher ct ON ic.id = ct.competition_id
+        LEFT JOIN teacher t ON ct.teacher_id = t.id
+        <where>
+            <!-- 动态查询条件 -->
+            <if test="name != null and name != ''">
+                AND ic.name LIKE CONCAT('%', #{name}, '%')
+            </if>
+            <if test="year != null">
+                AND ic.year = #{year}
+            </if>
+            <if test="status != null">
+                AND ic.status = #{status}
+            </if>
+        </where>
+        GROUP BY
+        ic.id, s.name
+        LIMIT #{offset}, #{size};
+    </select>
+
+</mapper>
